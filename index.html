@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <title>出差陪伴系统 (Web)</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>出差陪伴系统 (Web)</h1>
+
+  <section class="panel">
+    <h2>今日日程</h2>
+    <ul id="agenda-list"></ul>
+  </section>
+
+  <section class="panel">
+    <h2>行程列表</h2>
+    <ul id="trip-list"></ul>
+  </section>
+
+  <section class="panel">
+    <h2>Bot（固定指令）</h2>
+    <div id="bot-log"></div>
+    <div class="bot-input">
+      <input id="bot-text" placeholder="例如：出差 或 出差 东京 或 出差 东京 2025-09-25 到 2025-09-27" />
+      <button id="bot-send">发送</button>
+    </div>
+    <p class="hint">
+      指令：<code>出差</code>/<code>入住</code>/<code>退房</code>/<code>会议</code>/<code>报销</code>/
+      <code>足迹</code>/<code>清单</code>/<code>日历</code>
+    </p>
+  </section>
+
+  <!-- 出差日期选择对话框 -->
+  <dialog id="date-dialog">
+    <form method="dialog" id="date-form">
+      <h3>新建出差</h3>
+      <label>城市：
+        <input id="dlg-city" placeholder="例如：东京" required />
+      </label>
+      <div class="row">
+        <label>开始日期：
+          <input id="dlg-start" type="date" required />
+        </label>
+        <label>结束日期：
+          <input id="dlg-end" type="date" required />
+        </label>
+      </div>
+      <div class="actions">
+        <button type="button" id="dlg-cancel">取消</button>
+        <button type="button" id="dlg-ok">确定</button>
+      </div>
+    </form>
+  </dialog>
+  <!-- 报销对话框（贴在出差对话框 <dialog id="date-dialog">…</dialog> 之后） -->
+<!-- 报销对话框（仅由“报销”指令触发） -->
+<dialog id="expense-dialog">
+    <form method="dialog" id="expense-form">
+      <h3>新增报销</h3>
+      <label>项目：
+        <input id="exp-item" placeholder="例如：打车" required />
+      </label>
+      <label>金额：
+        <input id="exp-amount" type="number" min="0" step="0.01" placeholder="例如：18.5" required />
+      </label>
+      <label>币种：
+        <select id="exp-currency">
+          <option value="JPY">JPY（日元）</option>
+          <option value="USD">USD（美元）</option>
+          <option value="RMB">RMB（人民币）</option>
+        </select>
+      </label>
+      <div class="actions">
+        <button type="button" id="exp-cancel">取消</button>
+        <button type="button" id="exp-ok">确定</button>
+      </div>
+    </form>
+  </dialog>
+  
+
+  <script src="app.js"></script>
+</body>
+</html>

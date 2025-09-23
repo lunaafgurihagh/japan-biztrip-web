@@ -1,0 +1,43 @@
+body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 24px; }
+h1 { margin-bottom: 12px; }
+.panel { border: 1px solid #ddd; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; }
+#bot-log { min-height: 80px; background: #fafafa; border: 1px solid #eee; padding: 8px; border-radius: 6px; margin-bottom: 8px; }
+.bot-input { display: flex; gap: 8px; }
+.bot-input input { flex: 1; padding: 8px; }
+.hint { color: #666; font-size: 12px; }
+#trip-list li, #agenda-list li { margin: 6px 0; }
+.user { color: #0b6; }
+.sys { color: #06c; }
+.trip-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .trip-meta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .btn-del {
+    border: 1px solid #e55;
+    background: #fff5f5;
+    color: #c33;
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+  }
+  .btn-del:hover { background: #ffecec; }
+  
+  
+
+/* 对话框样式（<dialog>） */
+dialog::backdrop { background: rgba(0,0,0,0.25); }
+dialog { border: none; border-radius: 10px; padding: 16px 18px; width: min(420px, 92vw); }
+#date-form h3 { margin-top: 0; }
+#date-form label { display: block; margin: 8px 0; }
+#date-form input[type="date"], #date-form input[placeholder] { padding: 6px 8px; width: 100%; box-sizing: border-box; }
+#date-form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+#date-form .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
+dialog::backdrop { background: rgba(0,0,0,0.25); }
+dialog { border: none; border-radius: 10px; padding: 16px 18px; width: min(420px, 92vw); }
+#expense-form h3 { margin-top: 0; }
+#expense-form label { display: block; margin: 8px 0; }
+#expense-form input, #expense-form select { padding: 6px 8px; width: 100%; box-sizing: border-box; }
+#expense-form .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
