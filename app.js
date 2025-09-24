@@ -311,94 +311,117 @@ function downloadFile(name, content, type) {
   a.click();
   URL.revokeObjectURL(a.href);
 }
-
+async function askAI(text) {
+  try {
+    const resp = await fetch("/api/ai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: [{ role: "user", content: text }] })
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return await resp.json();
+  } catch (e) {
+    console.warn("AI 调用失败，使用本地规则：", e);
+    return null;
+  }
+}
 // ------- 绑定 UI -------
 document.addEventListener("DOMContentLoaded", () => {
   renderTrips();
   renderAgenda();
 
+  // 发送指令（先试 AI，失败/none 再回退本地规则）
   $("#bot-send").addEventListener("click", async () => {
-  const input = $("#bot-text");
-  const text = input.value;
-  if (!text.trim()) return;
-  logUser(text);
+    const input = $("#bot-text");
+    const text = input.value;
+    if (!text.trim()) return;
+    logUser(text);
 
-  // 1) 先试 AI
-  const ai = await askAI(text);
-  if (ai) {
-    if (ai.chat_reply) logSys(ai.chat_reply);
+    try {
+      const ai = await askAI(text);
+      if (ai) {
+        if (ai.chat_reply) logSys(ai.chat_reply);
 
-    switch (ai.intent) {
-      case "expense_add": {
-        const s = ai.slots || {};
-        // 打开你已有的“报销”弹窗，并预填
-        openExpenseDialog(s.item || "", s.amount != null ? String(s.amount) : "", (s.currency || "JPY"));
-        input.value = "";
-        return;
-      }
-      case "trip_create": {
-        const s = ai.slots || {};
-        // 打开你已有的“出差”弹窗，并预填
-        const preCity = s.city || "";
-        openTripDialog(preCity);
-        // 预填日期（若AI已解析）
-        if (s.start) $("#dlg-start").value = s.start;
-        if (s.end) $("#dlg-end").value = s.end;
-        input.value = "";
-        return;
-      }
-      case "hotel_checkin": {
-        const s = ai.slots || {};
-        // 你可以加“入住”弹窗（如之前的），这里仅提示或走现有命令格式
-        logSys("我来登记入住日期，请输入：入住 YYYY-MM-DD 到 YYYY-MM-DD");
-        input.value = "";
-        return;
-      }
-      case "hotel_checkout": {
-        const s = ai.slots || {};
-        logSys("我来登记退房日期，请输入：退房 YYYY-MM-DD");
-        input.value = "";
-        return;
-      }
-      case "meeting_add": {
-        const s = ai.slots || {};
-        // 直接写入或弹窗确认，这里先直接写入（若槽位齐全）
-        if (s.title && s.date && s.time) {
-          db.meetings.push({ id: uid(), title: s.title, date: s.date, time: s.time });
-          saveDB(db); renderAgenda();
-          logSys(`已创建会议：${s.title} @ ${s.date} ${s.time}`);
-        } else {
-          logSys("需要更多信息（标题/日期/时间），你也可以这样说：明天10点客户A会议");
+        switch (ai.intent) {
+          case "expense_add": {
+            const s = ai.slots || {};
+            openExpenseDialog(
+              s.item || "",
+              s.amount != null ? String(s.amount) : "",
+              (s.currency || "JPY")
+            );
+            input.value = "";
+            return;
+          }
+          case "trip_create": {
+            const s = ai.slots || {};
+            const preCity = s.city || "";
+            openTripDialog(preCity);
+            if (s.start) $("#dlg-start").value = s.start;
+            if (s.end) $("#dlg-end").value = s.end;
+            input.value = "";
+            return;
+          }
+          case "hotel_checkin": {
+            logSys("我来登记入住日期，请输入：入住 YYYY-MM-DD 到 YYYY-MM-DD");
+            input.value = "";
+            return;
+          }
+          case "hotel_checkout": {
+            logSys("我来登记退房日期，请输入：退房 YYYY-MM-DD");
+            input.value = "";
+            return;
+          }
+          case "meeting_add": {
+            const s = ai.slots || {};
+            if (s.title && s.date && s.time) {
+              db.meetings.push({ id: uid(), title: s.title, date: s.date, time: s.time });
+              saveDB(db); renderAgenda();
+              logSys(`已创建会议：${s.title} @ ${s.date} ${s.time}`);
+            } else {
+              logSys("需要更多信息（标题/日期/时间），你也可以这样说：明天10点客户A会议");
+            }
+            input.value = "";
+            return;
+          }
+          case "smalltalk": {
+            // 闲聊不触发功能
+            input.value = "";
+            return;
+          }
+          case "none":
+          default:
+            // 交由本地规则继续尝试
+            break;
         }
-        input.value = "";
-        return;
       }
-      case "smalltalk": {
-        // 闲聊：只显示 chat_reply，不触发功能
-        input.value = "";
-        return;
-      }
-      case "none":
-      default:
-        // 交由本地规则继续尝试
-        break;
+    } catch (e) {
+      console.error("发送流程异常：", e);
+      logSys("AI 暂时不可用，我先用本地规则来处理。");
     }
-  }
 
-  // 2) AI 不可用 或 解析为 none → 回退到你现有的本地规则
-  handleCommand(text);
-  input.value = "";
-});
-
-
-  // 行程列表删除按钮（事件委托）
-  $("#trip-list").addEventListener("click", (e) => {
-    const btn = e.target.closest(".btn-del");
-    if (!btn) return;
-    const id = btn.getAttribute("data-id");
-    if (!id) return;
-
-    if (!confirm("确定删除这条出差记录吗？（会议与报销将保留）")) return;
-    deleteTripById(id);
+    // AI 不可用或 intent=none → 用本地规则兜底
+    handleCommand(text);
+    input.value = "";
   });
+
+  // 回车发送
+  $("#bot-text").addEventListener("keydown", (e)=>{
+    if (e.key === "Enter") { $("#bot-send").click(); }
+  });
+
+  // （可选）行程列表删除按钮事件委托（如果有删除按钮）
+  const tripList = document.querySelector("#trip-list");
+  if (tripList) {
+    tripList.addEventListener("click", (e) => {
+      const btn = e.target.closest(".btn-del");
+      if (!btn) return;
+      const id = btn.getAttribute("data-id");
+      if (!id) return;
+      if (!confirm("确定删除这条出差记录吗？（会议与报销将保留）")) return;
+      deleteTripById(id);
+    });
+  }
 });
+
+  

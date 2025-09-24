@@ -6,8 +6,8 @@ export default async function handler(req, res) {
     if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: "Bad request" });
   
     // 用 Groq（免费额度，模型：Llama3.1-8B-Instruct）
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) return res.status(500).json({ error: "Missing GROQ_API_KEY" });
+    const apiKey = process.env.GROQAPIKEY;
+    if (!apiKey) return res.status(500).json({ error: "Missing GROQAPIKEY" });
   
     const systemPrompt = `
   你是一个NLU解析器，输出JSON，字段：intent, slots, chat_reply。
